@@ -24,8 +24,18 @@
 - kakeibo report
   - レポートの出力
 
+## 開発環境
+
+- rustc
+  - `1.84.1`
+- cargo
+  - `1.84.1`
+
 ## dependencies
 
 - clap
   - `4.5.31`
   - CLIのインターフェイスの実装に採用
+- csv
+  - `1.3.1`
+  - CSVの読み書き
