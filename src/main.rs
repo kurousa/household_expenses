@@ -1,9 +1,24 @@
-use clap::{Parser, Subcommand};
+use clap::{Args, Parser, Subcommand};
+use csv::Writer;
 
+#[derive(Args)]
+struct NewArgs {
+    /// 口座名
+    account_name: String,
+}
+impl NewArgs {
+    fn run(&self) {
+        let file_name: String = format!("{}.csv", self.account_name);
+        let mut writer: Writer<std::fs::File> = Writer::from_path(file_name).unwrap();
+        writer.write_record(["日付", "用途", "金額"]).unwrap();
+        writer.flush().unwrap();
+        println!("新しい口座「{}」を作成しました", self.account_name)
+    }
+}
 #[derive(Subcommand)]
 enum Command {
     /// 新しい口座を作成
-    New,
+    New(NewArgs),
     /// 口座に入金する
     Deposit,
     /// 口座から出金する
@@ -21,6 +36,12 @@ struct App {
     command: Command,
 }
 fn main() {
-    // clapによるパース
-    let _args = App::parse();
+    let args: App = App::parse();
+    match args.command {
+        Command::New(args) => args.run(),
+        Command::Deposit => unimplemented!("Under construction"),
+        Command::Withdraw => unimplemented!("Under construction"),
+        Command::Import => unimplemented!("Under construction"),
+        Command::Report => unimplemented!("Under construction"),
+    }
 }
