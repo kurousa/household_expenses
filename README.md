@@ -35,7 +35,16 @@
 
 - clap
   - `4.5.31`
+  - features: `derive`
   - CLIのインターフェイスの実装に採用
 - csv
   - `1.3.1`
   - CSVの読み書き
+- chrono
+  - `0.4.40`
+  - features: `serde`
+  - 日付処理
+- serde
+  - `1.0.198`
+  - features: `derive`
+  - データの入出力におけるシリアライズ／デシリアライズ
