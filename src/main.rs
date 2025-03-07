@@ -2,7 +2,7 @@ use chrono::NaiveDate;
 use clap::{Args, Parser, Subcommand};
 use csv::{Reader, Writer, WriterBuilder};
 use serde::{Deserialize, Serialize};
-use std::fs::OpenOptions;
+use std::{collections::HashMap, fs::OpenOptions};
 
 #[derive(Args)]
 struct NewArgs {
@@ -120,6 +120,28 @@ impl ImportArgs {
     }
 }
 
+#[derive(Args)]
+struct ReportArgs {
+    /// インポート対象ファイル名
+    files: Vec<String>,
+}
+impl ReportArgs {
+    fn run(&self) {
+        let mut map = HashMap::new();
+        for file in &self.files {
+            let mut reader = Reader::from_path(file).unwrap();
+            for result in reader.deserialize() {
+                let record: Record = result.unwrap();
+                let amount: i32 = record.金額;
+                let date: NaiveDate = record.日付;
+                let sum = map.entry(date.format("%Y-%m").to_string()).or_insert(0);
+                *sum += amount;
+            }
+        }
+        println!("{:?}", map)
+    }
+}
+
 #[derive(Subcommand)]
 enum Command {
     /// 新しい口座を作成
@@ -131,7 +153,7 @@ enum Command {
     /// CSVからインポートする
     Import(ImportArgs),
     /// レポート出力
-    Report,
+    Report(ReportArgs),
 }
 
 #[derive(Parser)]
@@ -147,6 +169,6 @@ fn main() {
         Command::Deposit(args) => args.run(),
         Command::Withdraw(args) => args.run(),
         Command::Import(args) => args.run(),
-        Command::Report => unimplemented!(),
+        Command::Report(args) => args.run(),
     }
 }
