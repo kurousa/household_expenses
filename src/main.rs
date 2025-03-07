@@ -49,6 +49,38 @@ impl DepositArgs {
     }
 }
 
+#[derive(Args)]
+struct WithDrawArgs {
+    /// 口座名
+    account_name: String,
+    /// 日付
+    date: NaiveDate,
+    /// 用途
+    usage: String,
+    /// 金額
+    amount: u32,
+}
+impl WithDrawArgs {
+    fn run(&self) {
+        // 追記モードでファイルを開く設定
+        let open_options = OpenOptions::new()
+            .append(true)
+            .open(format!("{}.csv", self.account_name))
+            .unwrap();
+        // 作成したOpenOptionsを利用してwriterを作成
+        let mut writer = Writer::from_writer(open_options);
+
+        writer
+            .write_record(&[
+                self.date.format("%Y-%m-%d").to_string(),
+                self.usage.to_string(),
+                format!("-{}", self.amount),
+            ])
+            .unwrap();
+        writer.flush().unwrap();
+    }
+}
+
 #[derive(Subcommand)]
 enum Command {
     /// 新しい口座を作成
@@ -56,7 +88,7 @@ enum Command {
     /// 口座に入金する
     Deposit(DepositArgs),
     /// 口座から出金する
-    Withdraw,
+    Withdraw(WithDrawArgs),
     /// CSVからインポートする
     Import,
     /// レポート出力
@@ -74,12 +106,8 @@ fn main() {
     match args.command {
         Command::New(args) => args.run(),
         Command::Deposit(args) => args.run(),
-        Command::Withdraw => withdraw(), // TODO: implement
+        Command::Withdraw(args) => args.run(),
         Command::Import => unimplemented!("Under construction"),
         Command::Report => unimplemented!("Under construction"),
     }
-}
-
-fn withdraw() {
-    unimplemented!()
 }
