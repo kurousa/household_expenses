@@ -1,5 +1,7 @@
+use chrono::NaiveDate;
 use clap::{Args, Parser, Subcommand};
 use csv::Writer;
+use std::fs::OpenOptions;
 
 #[derive(Args)]
 struct NewArgs {
@@ -15,12 +17,44 @@ impl NewArgs {
         println!("新しい口座「{}」を作成しました", self.account_name)
     }
 }
+#[derive(Args)]
+struct DepositArgs {
+    /// 口座名
+    account_name: String,
+    /// 日付
+    date: NaiveDate,
+    /// 用途
+    usage: String,
+    /// 金額
+    amount: u32,
+}
+impl DepositArgs {
+    fn run(&self) {
+        // 追記モードでファイルを開く設定
+        let open_options = OpenOptions::new()
+            .append(true)
+            .open(format!("{}.csv", self.account_name))
+            .unwrap();
+        // 作成したOpenOptionsを利用してwriterを作成
+        let mut writer = Writer::from_writer(open_options);
+
+        writer
+            .write_record(&[
+                self.date.format("%Y-%m-%d").to_string(),
+                self.usage.to_string(),
+                self.amount.to_string(),
+            ])
+            .unwrap();
+        writer.flush().unwrap();
+    }
+}
+
 #[derive(Subcommand)]
 enum Command {
     /// 新しい口座を作成
     New(NewArgs),
     /// 口座に入金する
-    Deposit,
+    Deposit(DepositArgs),
     /// 口座から出金する
     Withdraw,
     /// CSVからインポートする
@@ -39,9 +73,13 @@ fn main() {
     let args: App = App::parse();
     match args.command {
         Command::New(args) => args.run(),
-        Command::Deposit => unimplemented!("Under construction"),
-        Command::Withdraw => unimplemented!("Under construction"),
+        Command::Deposit(args) => args.run(),
+        Command::Withdraw => withdraw(), // TODO: implement
         Command::Import => unimplemented!("Under construction"),
         Command::Report => unimplemented!("Under construction"),
     }
+}
+
+fn withdraw() {
+    unimplemented!()
 }
