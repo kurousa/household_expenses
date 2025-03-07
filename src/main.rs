@@ -1,6 +1,7 @@
 use chrono::NaiveDate;
 use clap::{Args, Parser, Subcommand};
-use csv::Writer;
+use csv::{Reader, Writer, WriterBuilder};
+use serde::{Deserialize, Serialize};
 use std::fs::OpenOptions;
 
 #[derive(Args)]
@@ -81,6 +82,44 @@ impl WithDrawArgs {
     }
 }
 
+/// CSVインポート用の構造体
+/// 不正な入力受付を防ぐ
+#[derive(Serialize, Deserialize)]
+struct Record {
+    日付: NaiveDate,
+    用途: String,
+    金額: i32,
+}
+#[derive(Args)]
+struct ImportArgs {
+    /// インポート対象ファイル名
+    src_file_name: String,
+    /// インポート先口座名
+    dst_account_name: String,
+}
+impl ImportArgs {
+    fn run(&self) {
+        dbg!(&self.src_file_name);
+        dbg!(&self.dst_account_name);
+        // 追記モードでファイルを開く設定
+        let open_options = OpenOptions::new()
+            .append(true)
+            .open(format!("{}.csv", self.dst_account_name))
+            .unwrap();
+        // 作成したOpenOptionsを利用してwriterを作成
+        let mut writer = WriterBuilder::new()
+            .has_headers(false)
+            .from_writer(open_options);
+        // CSVファイルを読み込み、行ごとにインポート先CSVに書き込む
+        let mut reader = Reader::from_path(&self.src_file_name).unwrap();
+        for result in reader.deserialize() {
+            let record: Record = result.unwrap();
+            writer.serialize(record).unwrap();
+        }
+        writer.flush().unwrap();
+    }
+}
+
 #[derive(Subcommand)]
 enum Command {
     /// 新しい口座を作成
@@ -90,7 +129,7 @@ enum Command {
     /// 口座から出金する
     Withdraw(WithDrawArgs),
     /// CSVからインポートする
-    Import,
+    Import(ImportArgs),
     /// レポート出力
     Report,
 }
@@ -107,7 +146,7 @@ fn main() {
         Command::New(args) => args.run(),
         Command::Deposit(args) => args.run(),
         Command::Withdraw(args) => args.run(),
-        Command::Import => unimplemented!("Under construction"),
-        Command::Report => unimplemented!("Under construction"),
+        Command::Import(args) => args.run(),
+        Command::Report => unimplemented!(),
     }
 }
